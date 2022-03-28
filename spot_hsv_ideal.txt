@@ -1,0 +1,14 @@
+IDEAL:
+		H	S	V
+Lower:	0	43	85
+Higher:	11	246	233
+
+PHOTO:
+		H	S	V
+Lower:	0	56	0
+Higher:	12	199	255
+
+GAZEBO PHOTO:
+		H	S	V
+Lower:	2	85	168
+Higher:	12	255	255
