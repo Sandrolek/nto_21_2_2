@@ -319,6 +319,7 @@ def image_callback(data):
         # GET TELEM
         print("REACHED CROSS")
         rospy.sleep(3)
+        
         navigate(x=0, y=0, z=0, speed=0.2, yaw=-1.57, frame_id="body")
         rospy.sleep(4)
         print("ROTATED")
