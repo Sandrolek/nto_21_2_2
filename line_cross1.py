@@ -36,14 +36,6 @@ WIDTH = 320
 
 SPEED_X = 0.2
 
-RIGHT_T_X = WIDTH // 2
-RIGHT_T_Y = HEIGHT - 80
-LEFT_T_X = WIDTH // 2 - 50
-LEFT_T_Y = HEIGHT - 80
-
-TOP_X = WIDTH // 2 - 20
-TOP_Y = HEIGHT // 2 - 20
-
 FULL_X_B = 40
 FULL_X_E = WIDTH - 40
 
@@ -77,66 +69,6 @@ def convert_angle(angle=0, w_min=320, h_min=240):
         angle = 90 + angle
 
     return angle
-
-def check_right(img_r_half, orig):
-    
-    cnt_img_r_half, _ = cv2.findContours(img_r_half.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt_img_r_half.sort(key=cv2.minAreaRect)
-
-    if len(cnt_img_r_half) > 0:
-        cnt = cnt_img_r_half[0]
-        if cv2.contourArea(cnt) > 300:
-            #state = 
-            
-            rect = cv2.minAreaRect(cnt)
-            (x_min, y_min), (w_min, h_min), angle = rect
-
-            #print(angle)
-
-            x_min += RIGHT_T_X
-
-            box = cv2.boxPoints(((x_min, y_min), (w_min, h_min), angle)) # cv2.boxPoints(rect) for OpenCV 3.x
-            box = np.int0(box)
-            cv2.drawContours(orig, [box], 0, (0,0,255),2)
-
-            angle = convert_angle(angle=angle, w_min=w_min, h_min=h_min)
-
-            #print(f"angle: {angle}")
-
-            if abs(abs(angle) - 90) < 10 or abs(angle) < 10:
-                return True, [(x_min, y_min), (w_min, h_min), angle]
-    
-    return False
-
-def check_left(img_l_half, orig):
-    
-    cnt_img_l_half, _ = cv2.findContours(img_l_half.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt_img_l_half.sort(key=cv2.minAreaRect)
-
-    if len(cnt_img_l_half) > 0:
-        cnt = cnt_img_l_half[0]
-        if cv2.contourArea(cnt) > 300:
-            #state = 
-            
-            rect = cv2.minAreaRect(cnt)
-            (x_min, y_min), (w_min, h_min), angle = rect
-
-            # print(angle)
-
-            # x_min += RIGHT_T_X
-
-            box = cv2.boxPoints(((x_min, y_min), (w_min, h_min), angle)) # cv2.boxPoints(rect) for OpenCV 3.x
-            box = np.int0(box)
-            cv2.drawContours(orig, [box], 0, (0,0,255),2)
-
-            angle = convert_angle(angle=angle, w_min=w_min, h_min=h_min)
-
-            #print(f"angle: {angle}")
-
-            if abs(abs(angle) - 90) < 10 or abs(angle) < 10:
-                return True, [(x_min, y_min), (w_min, h_min), angle]
-    
-    return False
 
 def get_rect_top(img, orig):
     
@@ -209,47 +141,9 @@ def get_rect_full(img, orig):
             
     return False, []
 
-def get_rect_center(img, orig):
-    
-    cnts, _ = cv2.findContours(img.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnts.sort(key=cv2.minAreaRect)
-
-    if len(cnts) > 0:
-        #cnt = cnts[0]
-        cnt = max(cnts, key=cv2.contourArea)
-        if cv2.contourArea(cnt) > 50:
-            #state = 
-            #print("FULL", random.randint(0, 100))
-
-            rect = cv2.minAreaRect(cnt)
-            (x_min, y_min), (w_min, h_min), angle = rect
-
-            x_min += WIDTH // 2 - 30
-            # y_min += FULL_Y_B
-
-            box = cv2.boxPoints(((x_min, y_min), (w_min, h_min), angle)) # cv2.boxPoints(rect) for OpenCV 3.x
-            box = np.int0(box)
-            cv2.drawContours(orig, [box], 0, (0, 255, 0), 2)
-
-            angle = convert_angle(angle=angle, w_min=w_min, h_min=h_min)
-
-            if abs(angle) < 10:
-                return True, [(x_min, y_min), (w_min, h_min), angle]
-            
-    return False, []
-
 turn_point = [0, 0, 0]
 
 def image_callback(data):
-
-    global turn_state, start_turn_time
-
-    if turn_state:
-        print("In turn state")
-        if (time.time() - start_turn_time > TIME_TURN):
-            turn_state = False
-        else:
-            return
 
     cv_image = bridge.imgmsg_to_cv2(data, 'bgr8')  # OpenCV image
 
@@ -272,23 +166,12 @@ def image_callback(data):
 
     #cv2.imshow("BW image", black)
 
-    dir_state = {"top":     [False, []],
-                 "right":   [False, []],
-                 "left":    [False, []]
-                 }
-
     is_full, rect_full = get_rect_full(black, cv_image)
 
     top = black[:(HEIGHT // 2), :]
     is_top, rect_top = get_rect_top(top, cv_image)
 
     top_pub.publish(bridge.cv2_to_imgmsg(top, 'mono8'))
-
-    center = black[:, (WIDTH // 2 - 30):(WIDTH // 2 + 30)]
-
-    #is_center, rect_center = get_rect_center(center, cv_image)
-    
-    #center_pub.publish(bridge.cv2_to_imgmsg(center, 'mono8'))
 
     telem = get_telemetry()
 
@@ -319,7 +202,7 @@ def image_callback(data):
         # GET TELEM
         print("REACHED CROSS")
         rospy.sleep(3)
-        
+
         navigate(x=0, y=0, z=0, speed=0.2, yaw=-1.57, frame_id="body")
         rospy.sleep(4)
         print("ROTATED")
